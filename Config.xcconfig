@@ -1,0 +1,14 @@
+// Shared build settings. Put your real values in Config.local.xcconfig
+// (git-ignored) so they never get committed.
+
+// Your Apple Developer Team ID (Xcode > Settings > Accounts).
+DEVELOPMENT_TEAM =
+CODE_SIGN_STYLE = Automatic
+
+// Google OAuth "iOS" client ID from Google Cloud Console, e.g.
+// 1234567890-abcdefg.apps.googleusercontent.com
+GOOGLE_CLIENT_ID = REPLACE_ME.apps.googleusercontent.com
+// The same ID reversed, e.g. com.googleusercontent.apps.1234567890-abcdefg
+GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.REPLACE_ME
+
+#include? "Config.local.xcconfig"

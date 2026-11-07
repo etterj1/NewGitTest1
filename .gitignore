@@ -1,0 +1,9 @@
+# Xcode
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+build/
+*.xcworkspace/
+.DS_Store
+# Local secrets / per-developer config
+Config.local.xcconfig
