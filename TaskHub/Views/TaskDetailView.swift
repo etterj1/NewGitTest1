@@ -57,7 +57,7 @@ struct TaskDetailView: View {
             }
 
             Section("Ask AI") {
-                ForEach(AIPrompts.TaskAction.allCases) { action in
+                ForEach(AIPrompts.TaskAction.available) { action in
                     Button {
                         aiRequest = makeRequest(action)
                     } label: {
@@ -122,7 +122,8 @@ struct TaskDetailView: View {
             title: item.title,
             context: AIPrompts.describe(item, accountName: account?.displayName),
             initialPrompt: action.prompt,
-            webSearch: action.usesWebSearch
+            webSearch: action.usesWebSearch,
+            provider: action.requiredProvider
         )
         if item.source.canEdit {
             // Appends to the editable notes; the user reviews and taps Save to sync it.

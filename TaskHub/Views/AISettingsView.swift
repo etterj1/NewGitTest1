@@ -43,7 +43,7 @@ struct AISettingsView: View {
             } header: {
                 Text("Grok")
             } footer: {
-                Text("With “Search the web” on, Grok can also search X (Twitter), which is handy for social listening and trend research. API usage is billed by xAI, separately from an X Premium or SuperGrok subscription.")
+                Text("Default model grok-4.7; use grok-4.3 for cheaper, faster answers. With search on, Grok also searches X (last 30 days) and powers each task's “Check the buzz on X”. xAI bills X search per post fetched (about $5 per 1,000) on top of tokens, separately from X Premium or SuperGrok.")
             }
 
             if AIProvider.configured.count > 1 {

@@ -7,6 +7,8 @@ struct AIRequest: Identifiable {
     let context: String
     var initialPrompt: String?
     var webSearch: Bool = true
+    /// Forces a specific assistant (e.g. Grok for X search).
+    var provider: AIProvider?
     /// When set, replies can be appended to the task's notes.
     var onSaveToNotes: ((String) -> Void)?
 }
@@ -166,7 +168,11 @@ struct AssistantView: View {
 
     private func start() {
         let configured = AIProvider.configured
-        provider = AIProvider(rawValue: defaultProvider).flatMap { configured.contains($0) ? $0 : nil } ?? configured.first ?? .claude
+        if let required = request.provider, configured.contains(required) {
+            provider = required
+        } else {
+            provider = AIProvider(rawValue: defaultProvider).flatMap { configured.contains($0) ? $0 : nil } ?? configured.first ?? .claude
+        }
         webSearch = request.webSearch
         resetConversation()
         if let prompt = request.initialPrompt, turns.isEmpty {
