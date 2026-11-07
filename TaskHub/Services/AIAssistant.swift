@@ -3,7 +3,7 @@ import Foundation
 /// AI helpers for research, planning and drafting. You bring your own API keys;
 /// they're stored in the Keychain and requests go straight from the device to the provider.
 enum AIProvider: String, CaseIterable, Identifiable {
-    case claude, chatgpt
+    case claude, chatgpt, grok
 
     var id: String { rawValue }
 
@@ -11,6 +11,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
         switch self {
         case .claude: return "Claude"
         case .chatgpt: return "ChatGPT"
+        case .grok: return "Grok"
         }
     }
 
@@ -27,6 +28,8 @@ enum AISettings {
     static let defaultProviderKey = "ai.defaultProvider"
     static let openAIModelKey = "ai.openai.model"
     static let defaultOpenAIModel = "gpt-5"
+    static let grokModelKey = "ai.grok.model"
+    static let defaultGrokModel = "grok-4"
     /// Claude's current default model.
     static let claudeModel = "claude-opus-5-5"
 }
@@ -50,6 +53,10 @@ enum AIConversationFactory {
             let model = UserDefaults.standard.string(forKey: AISettings.openAIModelKey)
             return OpenAIConversation(apiKey: key, model: (model?.isEmpty ?? true) ? AISettings.defaultOpenAIModel : model!,
                                       instructions: system, webSearch: webSearch)
+        case .grok:
+            let model = UserDefaults.standard.string(forKey: AISettings.grokModelKey)
+            return GrokConversation(apiKey: key, model: (model?.isEmpty ?? true) ? AISettings.defaultGrokModel : model!,
+                                    system: system, liveSearch: webSearch)
         }
     }
 }
@@ -162,6 +169,79 @@ final class OpenAIConversation: AIConversation {
         }
         let reply = parts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         return reply.isEmpty ? "(No answer returned.)" : reply
+    }
+}
+
+// MARK: - Grok (xAI, OpenAI-compatible API)
+
+/// Talks to xAI's OpenAI-compatible API. With live search on it uses the Responses endpoint
+/// with web + X (Twitter) search tools; if xAI rejects that request, it answers without search
+/// rather than failing, and says so.
+@MainActor
+final class GrokConversation: AIConversation {
+    private static let base = URL(string: "https://api.x.ai/v1/")!
+    private let apiKey: String
+    private let model: String
+    private let liveSearch: Bool
+    /// Stateless on xAI's side: we resend the whole conversation each turn.
+    private var messages: [[String: String]]
+
+    init(apiKey: String, model: String, system: String, liveSearch: Bool) {
+        self.apiKey = apiKey
+        self.model = model
+        self.liveSearch = liveSearch
+        self.messages = [["role": "system", "content": system]]
+    }
+
+    func send(_ text: String) async throws -> String {
+        messages.append(["role": "user", "content": text])
+        var reply: String
+        if liveSearch {
+            do {
+                reply = try await searchReply()
+            } catch APIError.http(let status, _) where (400..<500).contains(status) && status != 401 && status != 403 {
+                reply = try await chatReply()
+                reply += "\n\n_(Live search wasn't available for this request, so this answer is from Grok's own knowledge.)_"
+            }
+        } else {
+            reply = try await chatReply()
+        }
+        messages.append(["role": "assistant", "content": reply])
+        return reply
+    }
+
+    private var headers: [String: String] { ["Authorization": "Bearer \(apiKey)"] }
+
+    private func chatReply() async throws -> String {
+        let data = try await HTTP.data(Self.base, "chat/completions", method: "POST", headers: headers,
+                                       body: .json(["model": model, "messages": messages]), session: HTTP.longSession)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let choice = (json?["choices"] as? [[String: Any]])?.first
+        let text = (choice?["message"] as? [String: Any])?["content"] as? String
+        return Self.clean(text)
+    }
+
+    private func searchReply() async throws -> String {
+        let body: [String: Any] = [
+            "model": model,
+            "input": messages,
+            "tools": [["type": "web_search"], ["type": "x_search"]],
+        ]
+        let data = try await HTTP.data(Self.base, "responses", method: "POST", headers: headers,
+                                       body: .json(body), session: HTTP.longSession)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        var parts: [String] = []
+        for item in json?["output"] as? [[String: Any]] ?? [] where item["type"] as? String == "message" {
+            for piece in item["content"] as? [[String: Any]] ?? [] where piece["type"] as? String == "output_text" {
+                if let text = piece["text"] as? String { parts.append(text) }
+            }
+        }
+        return Self.clean(parts.joined(separator: "\n"))
+    }
+
+    private static func clean(_ text: String?) -> String {
+        let trimmed = (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "(No answer returned.)" : trimmed
     }
 }
 

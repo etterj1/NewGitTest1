@@ -24,7 +24,7 @@ TaskHub is a native SwiftUI app for **macOS and iOS**. It puts everything that's
 - **Mac extras:** a menu-bar panel showing today's items, ⌘N for a new task, and accounts under Settings (⌘,).
 - **Offline cache:** the last synced list shows immediately when the app opens.
 - **Privacy:** tokens are kept in the Keychain. The app talks directly to each service, with no server in between.
-- **AI help (Claude and ChatGPT):** every task has **Research this**, **Break into steps**, **Draft a reply** and **Ask anything…**, and the list has a ✨ **Daily briefing** that prioritises everything on your plate. Answers can use web search, and a reply can be added to the task's notes and synced back to its app.
+- **AI help (Claude, ChatGPT and Grok):** every task has **Research this**, **Break into steps**, **Draft a reply** and **Ask anything…**, and the list has a ✨ **Daily briefing** that prioritises everything on your plate. Answers can use web search, and a reply can be added to the task's notes and synced back to its app.
 
 > **About "notes":** Apple Notes has no public API, so it can't be connected. For quick notes, use the **TaskHub Inbox** or **Apple Reminders**. Notion could be added as a connector later.
 
@@ -77,7 +77,7 @@ To change which messages count as asks, open the account and edit **Slack search
 Choose **Add Account → Apple** and allow access. Every account already set up on the device (iCloud, Exchange, Google, …) is included.
 
 ### 6. AI assistants (optional)
-Open **Accounts → AI Assistants** and paste a **Claude** key (from [console.anthropic.com](https://console.anthropic.com/settings/keys)) and/or an **OpenAI** key (from [platform.openai.com](https://platform.openai.com/api-keys)). API usage is billed by each provider and is separate from a Claude.ai or ChatGPT Plus subscription. When you use the assistant, that task's details (or your list, for a briefing) are sent to the provider you pick.
+Open **Accounts → AI Assistants** and paste any of: a **Claude** key (from [console.anthropic.com](https://console.anthropic.com/settings/keys)), an **OpenAI** key (from [platform.openai.com](https://platform.openai.com/api-keys)), or an **xAI** key for **Grok** (from [console.x.ai](https://console.x.ai)). With web search on, Grok can also search X (Twitter), which is useful for social listening and trend research. If you have more than one key, you can switch assistants in the chat. API usage is billed by each provider and is separate from a Claude.ai, ChatGPT Plus, or X Premium/SuperGrok subscription. When you use the assistant, that task's details (or your list, for a briefing) are sent to the provider you pick.
 
 ---
 

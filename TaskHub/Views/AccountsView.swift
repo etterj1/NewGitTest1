@@ -47,7 +47,7 @@ struct AccountsView: View {
                     NavigationLink {
                         AISettingsView()
                     } label: {
-                        Label("AI Assistants (Claude, ChatGPT)", systemImage: "sparkles")
+                        Label("AI Assistants (Claude, ChatGPT, Grok)", systemImage: "sparkles")
                     }
                 }
             }

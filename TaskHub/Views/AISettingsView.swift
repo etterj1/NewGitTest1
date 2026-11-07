@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// Bring-your-own API keys for Claude and ChatGPT.
+/// Bring-your-own API keys for Claude, ChatGPT and Grok.
 struct AISettingsView: View {
     @AppStorage(AISettings.defaultProviderKey) private var defaultProvider = AIProvider.claude.rawValue
     @AppStorage(AISettings.openAIModelKey) private var openAIModel = AISettings.defaultOpenAIModel
+    @AppStorage(AISettings.grokModelKey) private var grokModel = AISettings.defaultGrokModel
     @Environment(\.openURL) private var openURL
 
     @State private var claudeKey = ""
     @State private var openAIKey = ""
+    @State private var grokKey = ""
     @State private var status: [AIProvider: Bool] = [:]
     @State private var message: String?
 
@@ -31,6 +33,17 @@ struct AISettingsView: View {
                 Text("ChatGPT")
             } footer: {
                 Text("API usage is billed by OpenAI to your platform account (separate from a ChatGPT Plus subscription).")
+            }
+
+            Section {
+                keyRow(.grok, text: $grokKey, placeholder: "xai-…")
+                TextField("Model", text: $grokModel, prompt: Text(AISettings.defaultGrokModel))
+                    .autocorrectionDisabled()
+                Button("Get an xAI API key") { openURL(URL(string: "https://console.x.ai")!) }
+            } header: {
+                Text("Grok")
+            } footer: {
+                Text("With “Search the web” on, Grok can also search X (Twitter), which is handy for social listening and trend research. API usage is billed by xAI, separately from an X Premium or SuperGrok subscription.")
             }
 
             if AIProvider.configured.count > 1 {

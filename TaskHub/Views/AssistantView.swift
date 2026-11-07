@@ -41,7 +41,7 @@ struct AssistantView: View {
                     ContentUnavailableView {
                         Label("No AI assistant connected", systemImage: "sparkles")
                     } description: {
-                        Text("Add a Claude or ChatGPT API key under Accounts → AI Assistants.")
+                        Text("Add a Claude, ChatGPT or Grok API key under Accounts → AI Assistants.")
                     }
                 } else {
                     transcript
