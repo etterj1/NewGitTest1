@@ -43,6 +43,14 @@ struct AccountsView: View {
                     }
                 }
 
+                Section("Board") {
+                    NavigationLink {
+                        ClientsSettingsView()
+                    } label: {
+                        Label("Clients & colors", systemImage: "paintpalette")
+                    }
+                }
+
                 Section("Research & help") {
                     NavigationLink {
                         AISettingsView()

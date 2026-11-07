@@ -2,7 +2,9 @@ import Foundation
 import Observation
 
 enum SidebarFilter: Hashable {
+    case board
     case all, today, upcoming, overdue, noDate, completed
+    case client(UUID)
     case source(TaskSource)
     case account(UUID)
     case project(String)
@@ -51,6 +53,9 @@ final class AppStore {
     private(set) var refreshingAccounts: Set<UUID> = []
     private(set) var lastRefresh: Date?
     var alertMessage: String?
+    private(set) var clients: [ClientTag] = []
+    /// Cards the user moved by hand: item id → lane.
+    private(set) var laneOverrides: [String: BoardLane] = [:]
 
     /// Items whose source can't record "done" (Slack search results, calendar events): id → completion date.
     @ObservationIgnored private var locallyDone: [String: Date] = [:]
@@ -63,6 +68,8 @@ final class AppStore {
         static let accounts = "accounts.json"
         static let items = "items-cache.json"
         static let locallyDone = "locally-done.json"
+        static let clients = "clients.json"
+        static let lanes = "board-lanes.json"
     }
 
     var isRefreshing: Bool { !refreshingAccounts.isEmpty }
@@ -71,6 +78,8 @@ final class AppStore {
         accounts = Persistence.load([Account].self, from: Files.accounts) ?? []
         items = Persistence.load([TaskItem].self, from: Files.items) ?? []
         locallyDone = Persistence.load([String: Date].self, from: Files.locallyDone) ?? [:]
+        clients = Persistence.load([ClientTag].self, from: Files.clients) ?? ClientTag.defaults
+        laneOverrides = Persistence.load([String: BoardLane].self, from: Files.lanes) ?? [:]
         if accounts.isEmpty {
             accounts = [Account(kind: .local, name: "TaskHub", identity: "On this device")]
             saveAccounts()
@@ -108,6 +117,8 @@ final class AppStore {
         return visibleItems
             .filter { item in
                 switch filter {
+                case .board: return !item.isCompleted && item.kind != .event
+                case .client(let id): return !item.isCompleted && client(for: item)?.id == id
                 case .all: return !item.isCompleted
                 case .today: return !item.isCompleted && (item.dueDate.map { $0 < tomorrow } ?? false)
                 case .upcoming: return !item.isCompleted && (item.dueDate.map { $0 >= today && $0 < week } ?? false)
@@ -226,6 +237,57 @@ final class AppStore {
         let liveIDs = Set(items.map(\.id))
         locallyDone = locallyDone.filter { !$0.key.hasPrefix(prefix) || liveIDs.contains($0.key) }
         saveLocallyDone()
+        let before = laneOverrides.count
+        laneOverrides = laneOverrides.filter { !$0.key.hasPrefix(prefix) || liveIDs.contains($0.key) }
+        if laneOverrides.count != before { saveLanes() }
+    }
+
+    // MARK: Board
+
+    func client(for item: TaskItem) -> ClientTag? {
+        let haystack = [item.project ?? "", item.title, account(for: item.accountID)?.displayName ?? ""].joined(separator: " · ")
+        return clients.first { $0.matches(haystack) }
+    }
+
+    /// Title without a redundant "Client — " prefix.
+    func boardTitle(for item: TaskItem) -> String {
+        client(for: item)?.strippingPrefix(from: item.title) ?? item.title
+    }
+
+    /// Overdue work always surfaces in Now, so nothing urgent hides in Someday.
+    /// Otherwise a lane you chose by hand wins, and the rest is sorted by due date.
+    func lane(for item: TaskItem) -> BoardLane {
+        if item.isOverdue { return .now }
+        if let manual = laneOverrides[item.id] { return manual }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        if let due = item.dueDate {
+            if due < calendar.date(byAdding: .day, value: 2, to: today)! { return .now }
+            if due < calendar.date(byAdding: .day, value: 14, to: today)! { return .next }
+            return .someday
+        }
+        // Undated emails and @mentions are recent asks; undated tasks can wait.
+        if item.kind == .email || item.kind == .message {
+            let fresh = (item.createdAt ?? .distantPast) > Date().addingTimeInterval(-2 * 86_400)
+            return fresh ? .now : .next
+        }
+        return .someday
+    }
+
+    func boardItems(in lane: BoardLane, client clientID: UUID? = nil) -> [TaskItem] {
+        items(matching: .board).filter { item in
+            self.lane(for: item) == lane && (clientID == nil || client(for: item)?.id == clientID)
+        }
+    }
+
+    func move(_ item: TaskItem, to lane: BoardLane) {
+        laneOverrides[item.id] = lane
+        saveLanes()
+    }
+
+    func updateClients(_ updated: [ClientTag]) {
+        clients = updated
+        Persistence.save(clients, to: Files.clients)
     }
 
     // MARK: Item operations (each pushes to the source app)
@@ -327,4 +389,5 @@ final class AppStore {
     private func saveAccounts() { Persistence.save(accounts, to: Files.accounts) }
     private func saveItems() { Persistence.save(items, to: Files.items) }
     private func saveLocallyDone() { Persistence.save(locallyDone, to: Files.locallyDone) }
+    private func saveLanes() { Persistence.save(laneOverrides, to: Files.lanes) }
 }

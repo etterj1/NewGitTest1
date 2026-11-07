@@ -8,6 +8,7 @@ struct SidebarView: View {
     var body: some View {
         List(selection: $selection) {
             Section("Focus") {
+                row(.board, "Board", "rectangle.split.3x1", .indigo)
                 row(.today, "Today", "sun.max", .orange)
                 row(.upcoming, "Next 7 Days", "calendar", .blue)
                 row(.overdue, "Overdue", "exclamationmark.circle", .red)
@@ -23,6 +24,15 @@ struct SidebarView: View {
                 Section("Apps") {
                     ForEach(activeSources) { source in
                         row(.source(source), source.displayName, source.symbol, source.color)
+                    }
+                }
+            }
+
+            let activeClients = store.clients.filter { store.count(for: .client($0.id)) > 0 }
+            if !activeClients.isEmpty {
+                Section("Clients") {
+                    ForEach(activeClients) { client in
+                        row(.client(client.id), client.name, "circle.fill", client.color)
                     }
                 }
             }

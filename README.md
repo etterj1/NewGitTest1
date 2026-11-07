@@ -17,6 +17,7 @@ TaskHub is a native SwiftUI app for **macOS and iOS**. It puts everything that's
 **Multiple accounts:** you can connect as many accounts per service as you need, for example two ClickUp logins, a work Gmail and a personal Gmail, and several Slack workspaces. Each account can be renamed, paused, or set to show only some of its sources.
 
 ### Features
+- **Board (the default view):** **Now / Next / Someday** lanes across every connected app, color-coded by client (RealVNC, Stackit/AHX, Stackit/Czar, Stackit/Basis, Lycoming College, WorkProud and Personal/Family come preset; edit them under Accounts → Clients & colors). Overdue items always appear in Now. Titles drop redundant "Client — " prefixes. You can drag cards between lanes on Mac and iPad or use the long-press menu, and tap a client to filter the board. On iPhone the lanes become tabs.
 - **Smart views:** Today (includes overdue items), Next 7 Days, Overdue, All Open, No Date, and Completed. You can also browse by app, project, or account.
 - **Search** across titles, notes, projects, and the person who asked.
 - **Two-way sync:** your edits are sent straight to the source app's API. If one fails, the change is rolled back and you see an error.

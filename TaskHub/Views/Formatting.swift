@@ -40,6 +40,8 @@ extension SidebarFilter {
     @MainActor
     func title(in store: AppStore) -> String {
         switch self {
+        case .board: return "Board"
+        case .client(let id): return store.clients.first { $0.id == id }?.name ?? "Client"
         case .all: return "All Open"
         case .today: return "Today"
         case .upcoming: return "Next 7 Days"
