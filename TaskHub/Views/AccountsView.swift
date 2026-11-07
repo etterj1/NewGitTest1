@@ -42,6 +42,14 @@ struct AccountsView: View {
                         Label("Add Account", systemImage: "plus.circle.fill")
                     }
                 }
+
+                Section("Research & help") {
+                    NavigationLink {
+                        AISettingsView()
+                    } label: {
+                        Label("AI Assistants (Claude, ChatGPT)", systemImage: "sparkles")
+                    }
+                }
             }
             .navigationTitle("Accounts")
             #if os(iOS)

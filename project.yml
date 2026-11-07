@@ -20,6 +20,7 @@ targets:
   TaskHub-iOS:
     type: application
     platform: iOS
+    scheme: {}
     sources:
       - path: TaskHub
         excludes:
@@ -30,6 +31,7 @@ targets:
       path: TaskHub/Resources/Info-iOS.plist
       properties:
         CFBundleDisplayName: TaskHub
+        ITSAppUsesNonExemptEncryption: false
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
@@ -54,6 +56,7 @@ targets:
   TaskHub-macOS:
     type: application
     platform: macOS
+    scheme: {}
     sources:
       - path: TaskHub
         excludes:
@@ -64,6 +67,7 @@ targets:
       path: TaskHub/Resources/Info-macOS.plist
       properties:
         CFBundleDisplayName: TaskHub
+        ITSAppUsesNonExemptEncryption: false
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity

@@ -7,6 +7,7 @@ struct TaskDetailView: View {
     @State private var draft: TaskDraft
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var aiRequest: AIRequest?
 
     init(item: TaskItem) {
         self.item = item
@@ -55,6 +56,16 @@ struct TaskDetailView: View {
                 }
             }
 
+            Section("Ask AI") {
+                ForEach(AIPrompts.TaskAction.allCases) { action in
+                    Button {
+                        aiRequest = makeRequest(action)
+                    } label: {
+                        Label(action.label, systemImage: action.symbol)
+                    }
+                }
+            }
+
             Section {
                 Button {
                     Task { await store.toggleCompleted(item) }
@@ -88,6 +99,9 @@ struct TaskDetailView: View {
         }
         .formStyle(.grouped)
         .navigationTitle(item.source.displayName)
+        .sheet(item: $aiRequest) { request in
+            AssistantView(request: request)
+        }
         .toolbar {
             if item.source.canEdit {
                 ToolbarItem(placement: .confirmationAction) {
@@ -101,6 +115,22 @@ struct TaskDetailView: View {
                 }
             }
         }
+    }
+
+    private func makeRequest(_ action: AIPrompts.TaskAction) -> AIRequest {
+        var request = AIRequest(
+            title: item.title,
+            context: AIPrompts.describe(item, accountName: account?.displayName),
+            initialPrompt: action.prompt,
+            webSearch: action.usesWebSearch
+        )
+        if item.source.canEdit {
+            // Appends to the editable notes; the user reviews and taps Save to sync it.
+            request.onSaveToNotes = { text in
+                draft.notes = draft.notes.isEmpty ? text : draft.notes + "\n\n" + text
+            }
+        }
+        return request
     }
 
     @MainActor

@@ -34,13 +34,22 @@ enum HTTP {
         return URLSession(configuration: config)
     }()
 
+    /// For AI requests, which can take minutes when the model researches on the web.
+    static let longSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 300
+        config.timeoutIntervalForResource = 600
+        return URLSession(configuration: config)
+    }()
+
     static func data(
         _ base: URL,
         _ path: String = "",
         method: String = "GET",
         query: [URLQueryItem] = [],
         headers: [String: String] = [:],
-        body: HTTPBody? = nil
+        body: HTTPBody? = nil,
+        session: URLSession = HTTP.session
     ) async throws -> Data {
         // appendingPathComponent percent-escapes characters such as "#" that appear in some IDs.
         let url = path.isEmpty ? base : base.appendingPathComponent(path)

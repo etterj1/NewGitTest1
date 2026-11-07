@@ -14,6 +14,7 @@ struct TaskListView: View {
     @Binding var showingNewTask: Bool
 
     @State private var search = ""
+    @State private var aiRequest: AIRequest?
 
     var body: some View {
         let items = store.items(matching: filter, search: search)
@@ -58,6 +59,9 @@ struct TaskListView: View {
             }
         }
         .searchable(text: $search, prompt: "Search tasks, people, projects")
+        .sheet(item: $aiRequest) { request in
+            AssistantView(request: request)
+        }
         .navigationTitle(filter.title(in: store))
         .refreshable { await store.refreshAll() }
         .toolbar {
@@ -68,6 +72,20 @@ struct TaskListView: View {
                     Label("New Task", systemImage: "plus")
                 }
                 .keyboardShortcut("n", modifiers: .command)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    let open = store.items(matching: .all)
+                    aiRequest = AIRequest(
+                        title: "Daily briefing",
+                        context: "My open items (\(open.count) total):\n" + AIPrompts.describe(list: open),
+                        initialPrompt: AIPrompts.briefing,
+                        webSearch: false
+                    )
+                } label: {
+                    Label("Daily Briefing", systemImage: "sparkles")
+                }
+                .help("Ask AI to prioritise everything on your plate")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {

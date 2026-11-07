@@ -24,6 +24,7 @@ TaskHub is a native SwiftUI app for **macOS and iOS**. It puts everything that's
 - **Mac extras:** a menu-bar panel showing today's items, ⌘N for a new task, and accounts under Settings (⌘,).
 - **Offline cache:** the last synced list shows immediately when the app opens.
 - **Privacy:** tokens are kept in the Keychain. The app talks directly to each service, with no server in between.
+- **AI help (Claude and ChatGPT):** every task has **Research this**, **Break into steps**, **Draft a reply** and **Ask anything…**, and the list has a ✨ **Daily briefing** that prioritises everything on your plate. Answers can use web search, and a reply can be added to the task's notes and synced back to its app.
 
 > **About "notes":** Apple Notes has no public API, so it can't be connected. For quick notes, use the **TaskHub Inbox** or **Apple Reminders**. Notion could be added as a connector later.
 
@@ -75,6 +76,32 @@ To change which messages count as asks, open the account and edit **Slack search
 ### 5. Apple Reminders and Calendar
 Choose **Add Account → Apple** and allow access. Every account already set up on the device (iCloud, Exchange, Google, …) is included.
 
+### 6. AI assistants (optional)
+Open **Accounts → AI Assistants** and paste a **Claude** key (from [console.anthropic.com](https://console.anthropic.com/settings/keys)) and/or an **OpenAI** key (from [platform.openai.com](https://platform.openai.com/api-keys)). API usage is billed by each provider and is separate from a Claude.ai or ChatGPT Plus subscription. When you use the assistant, that task's details (or your list, for a briefing) are sent to the provider you pick.
+
+---
+
+## Testing on your iPhone with TestFlight
+
+**One-time setup:**
+1. Join the [Apple Developer Program](https://developer.apple.com/programs/) ($99/year). TestFlight requires it.
+2. In [App Store Connect](https://appstoreconnect.apple.com) choose **Apps → + → New App**: platform iOS, name *TaskHub* (or any unique name), bundle ID `com.jasonetter.taskhub`. If the bundle ID isn't in the list, register it first at [developer.apple.com → Identifiers](https://developer.apple.com/account/resources/identifiers/list).
+3. In App Store Connect go to **Users and Access → Integrations → App Store Connect API**, create a key with the **Admin** role, and download the `.p8` file (you can only download it once). Note the **Key ID** and **Issuer ID**.
+
+**Upload a build, option A: from your Mac**
+```bash
+export APPLE_TEAM_ID=XXXXXXXXXX ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+export ASC_KEY_PATH=~/Downloads/AuthKey_XXXXXXXXXX.p8
+export GOOGLE_CLIENT_ID=1234567890-abc123.apps.googleusercontent.com   # optional
+./scripts/testflight.sh
+```
+(Or in Xcode: pick **Any iOS Device**, choose **Product → Archive**, then **Distribute App → TestFlight & App Store**.)
+
+**Upload a build, option B: from GitHub, no Mac needed per build**
+Add these repository secrets under **Settings → Secrets and variables → Actions**: `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` (paste the whole contents of the `.p8` file), and optionally `GOOGLE_CLIENT_ID`. Then go to **Actions → TestFlight → Run workflow**.
+
+**Install it:** once Apple finishes processing (usually 5–15 minutes), open the app in App Store Connect, go to **TestFlight**, add yourself under **Internal Testing**, and accept the invite in the **TestFlight** app on your iPhone. Internal testers don't need Apple's beta review.
+
 ---
 
 ## Project layout
@@ -85,7 +112,8 @@ Config.xcconfig             Team ID / Google client ID placeholders (override in
 TaskHub/
   App/TaskHubApp.swift      App entry, Mac Settings window and menu bar extra
   Models/                   TaskItem, Account, TaskSource (capabilities per app)
-  Services/                 HTTP helper, Keychain, JSON persistence, Google OAuth (PKCE)
+  Services/                 HTTP helper, Keychain, JSON persistence, Google OAuth (PKCE), AI assistants
+scripts/testflight.sh       Archive + upload to TestFlight (also used by .github/workflows/testflight.yml)
   Providers/                One connector per service, all implementing `TaskProvider`
   Store/AppStore.swift      Merges all accounts, filtering, optimistic sync, persistence
   Views/                    Sidebar, list, detail editor, new task, accounts, menu bar
@@ -100,4 +128,4 @@ TaskHub/
 - **Each device connects its own accounts.** Accounts and Inbox tasks aren't synced between your Mac and iPhone yet. CloudKit would be the natural way to add that.
 - ClickUp, Asana and Slack use personal tokens rather than a full OAuth flow. That's simpler for a personal tool, but sharing the app with a team would need OAuth.
 - Slack "done" state is the ✅ reaction plus a local record, because Slack search can't filter by your own reactions.
-- Ideas for later: home-screen and Notification Center widgets, due-date notifications, Notion as the "notes" source, and AI triage (e.g. "summarise what clients asked me for this week").
+- Ideas for later: home-screen and Notification Center widgets, due-date notifications, Notion as the "notes" source, and letting the assistant create and update tasks directly.
